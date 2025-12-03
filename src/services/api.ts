@@ -1,7 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = '	http://academico3.rj.senac.br/rgpsaude'; 
+const BASE_URL = 'http://academico3.rj.senac.br/rgpsaude'; // url oficial APK SENAC
+
 
 const api = axios.create({
   baseURL: BASE_URL,
