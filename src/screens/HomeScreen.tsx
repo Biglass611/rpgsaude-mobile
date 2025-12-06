@@ -1,157 +1,78 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { getMeusAvatares } from '../services/avatarService';
-import { logout } from '../services/authService';
-import { AvatarDTO } from '../types/avatar';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { API_URL } from './config';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const [avatar, setAvatar] = useState<AvatarDTO | null>(null);
+  const [avatar, setAvatar] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Função que carrega os dados
-  const carregarDados = async () => {
+  useEffect(() => {
+    carregarAvatar();
+  }, []);
+
+  const carregarAvatar = async () => {
     try {
-      setLoading(true);
-      const lista = await getMeusAvatares();
-      
-      // Como a relação é 1:1, pegamos o primeiro da lista
-      if (lista.length > 0) {
-        setAvatar(lista[0]);
-      }
+      const token = await AsyncStorage.getItem('@rpgsaude_token');
+      const response = await axios.get(`${API_URL}/api/avatar/listar`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.length > 0) setAvatar(response.data[0]);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar seu avatar.');
+      Alert.alert('Erro', 'Não foi possível carregar os dados.');
     } finally {
       setLoading(false);
     }
   };
 
-  // useEffect roda assim que a tela abre
-  useEffect(() => {
-    carregarDados();
-  }, []);
-
-  const handleLogout = async () => {
-    await logout();
+  const logout = async () => {
+    await AsyncStorage.removeItem('@rpgsaude_token');
     navigation.replace('Login');
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3498db" />
-      </View>
-    );
-  }
+  if (loading) return <ActivityIndicator style={{marginTop:50}} size="large" color="#3498db" />;
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho com Saudação e Logout */}
       <View style={styles.header}>
-        <Text style={styles.welcome}>Olá, {avatar?.nomeUsuario || 'Guerreiro'}!</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Sair</Text>
-        </TouchableOpacity>
+        <Text style={styles.welcome}>Olá, {avatar?.nomeUsuario}</Text>
+        <TouchableOpacity onPress={logout} style={styles.logout}><Text style={styles.logoutText}>Sair</Text></TouchableOpacity>
       </View>
 
-      {/* Cartão do Avatar */}
-      {avatar ? (
+      {avatar && (
         <View style={styles.card}>
-          <View style={styles.avatarIcon}>
-            <Text style={styles.avatarEmoji}>🛡️</Text>
-          </View>
-          
-          <Text style={styles.charName}>{avatar.nome}</Text>
-          
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statLabel}>Nível</Text>
-              <Text style={styles.statValue}>{avatar.nivel}</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statLabel}>Moedas</Text>
-              <Text style={styles.statValue}>💰 {avatar.moedas}</Text>
-            </View>
-          </View>
-
-          <View style={styles.attrsContainer}>
-            <Text style={styles.attrTitle}>Atributos:</Text>
-            <Text style={styles.attrText}>{avatar.atributos || "Nenhum atributo definido"}</Text>
-          </View>
+          <Text style={{fontSize: 40}}>🛡️</Text>
+          <Text style={styles.nome}>{avatar.nome}</Text>
+          <Text>Nível: {avatar.nivel} | Moedas: {avatar.moedas}</Text>
         </View>
-      ) : (
-        <Text style={styles.errorText}>Nenhum avatar encontrado.</Text>
       )}
 
-      {/* MENU DE BOTÕES */}
-    <View style={styles.menuContainer}>
-        
-        {/* BOTÃO NOVO AQUI: Minhas Dungeons */}
-        <TouchableOpacity 
-          style={[styles.menuButton, { backgroundColor: '#f39c12' }]} 
-          onPress={() => navigation.navigate('MinhaDungeon')}
-        >
-          <Text style={styles.btnText}>🏰 MINHAS DUNGEONS</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={[styles.btn, {backgroundColor:'#3498db'}]} onPress={() => navigation.navigate('Desafios')}>
+        <Text style={styles.btnText}>🔍 PROCURAR GRUPO</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity style={[styles.btn, {backgroundColor:'#f39c12'}]} onPress={() => navigation.navigate('MinhaDungeon')}>
+        <Text style={styles.btnText}>🏰 MINHAS MISSÕES</Text>
+      </TouchableOpacity>
 
-        {/* Botão 2: Procurar novos grupos/desafios (Já existia) */}
-        <TouchableOpacity 
-          style={[styles.menuButton, { backgroundColor: '#3498db' }]} 
-          onPress={() => navigation.navigate('Desafios')}
-        >
-          <Text style={styles.btnText}>🔍 PROCURAR GRUPO</Text>
-        </TouchableOpacity>
-
-        {/* Botão 3: Criar meu próprio grupo (Já existia) */}
-        <TouchableOpacity 
-          style={[styles.menuButton, { backgroundColor: '#9b59b6' }]} 
-          onPress={() => navigation.navigate('CriarDesafio')}
-        >
-          <Text style={styles.btnText}>➕ CRIAR GRUPO</Text>
-        </TouchableOpacity>
-    </View>
-
+      <TouchableOpacity style={[styles.btn, {backgroundColor:'#9b59b6'}]} onPress={() => navigation.navigate('CriarDesafio')}>
+        <Text style={styles.btnText}>➕ CRIAR GRUPO</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ecf0f1', padding: 20, paddingTop: 50 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  welcome: { fontSize: 20, fontWeight: 'bold', color: '#2c3e50' },
-  logoutBtn: { backgroundColor: '#e74c3c', padding: 8, borderRadius: 5 },
-  logoutText: { color: '#fff', fontWeight: 'bold' },
-  
-  card: { backgroundColor: '#fff', borderRadius: 15, padding: 20, alignItems: 'center', elevation: 4 },
-  avatarIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#3498db', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  avatarEmoji: { fontSize: 40 },
-  charName: { fontSize: 24, fontWeight: 'bold', color: '#34495e', marginBottom: 20 },
-  
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 20 },
-  stat: { alignItems: 'center' },
-  statLabel: { fontSize: 14, color: '#7f8c8d' },
-  statValue: { fontSize: 18, fontWeight: 'bold', color: '#2c3e50' },
-  
-  attrsContainer: { alignSelf: 'flex-start', width: '100%', padding: 10, backgroundColor: '#f9f9f9', borderRadius: 8 },
-  attrTitle: { fontWeight: 'bold', marginBottom: 5 },
-  attrText: { color: '#555' },
-  errorText: { textAlign: 'center', marginTop: 50, color: '#7f8c8d' },
-
-  // Estilos dos Novos Botões
-  menuContainer: { width: '100%', marginTop: 20 },
-  menuButton: {
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    alignItems: 'center',
-    elevation: 3,
-  },
-  btnText: { 
-    color: '#FFF', 
-    fontWeight: 'bold', 
-    fontSize: 16 
-  }
+  container: { flex: 1, padding: 20, paddingTop: 50, backgroundColor: '#ecf0f1' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  welcome: { fontSize: 18, fontWeight: 'bold' },
+  logout: { backgroundColor: '#e74c3c', padding: 5, borderRadius: 5 },
+  logoutText: { color: '#fff' },
+  card: { backgroundColor: '#fff', padding: 20, borderRadius: 10, alignItems: 'center', marginBottom: 20 },
+  nome: { fontSize: 22, fontWeight: 'bold', marginVertical: 10 },
+  btn: { padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 10 },
+  btnText: { color: '#fff', fontWeight: 'bold' }
 });
