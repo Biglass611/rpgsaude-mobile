@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
-import api from '../services/api';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share } from 'react-native';
+import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from './config'; // Importa a URL daqui agora
 
 export default function CriarDesafioScreen() {
   const navigation = useNavigation();
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [tipo, setTipo] = useState('Geral');
+  const [loading, setLoading] = useState(false);
 
   const handleCriar = async () => {
     if (!nome || !descricao) {
@@ -15,15 +18,19 @@ export default function CriarDesafioScreen() {
       return;
     }
 
+    setLoading(true);
     try {
-      // Envia para o backend. Usamos recompensaId: 1 e chefeId: 1 fixos por enquanto
-      // para não complicar a criação (já que é um MVP).
-      const response = await api.post('/api/desafio/criar', {
+      const token = await AsyncStorage.getItem('@rpgsaude_token');
+      
+      // Chama a API direto aqui
+      const response = await axios.post(`${API_URL}/api/desafio/criar`, {
         nome: nome,
         descricao: descricao,
         tipo: tipo,
         chefeId: 1,      
         recompensaId: 1 
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       const novoId = response.data.id;
@@ -39,6 +46,8 @@ export default function CriarDesafioScreen() {
 
     } catch (error) {
       Alert.alert("Erro", "Falha ao criar o grupo.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,8 +75,8 @@ export default function CriarDesafioScreen() {
       <Text style={styles.label}>Categoria</Text>
       <TextInput style={styles.input} value={tipo} onChangeText={setTipo} placeholder="Ex: Cardio" />
 
-      <TouchableOpacity style={styles.btn} onPress={handleCriar}>
-        <Text style={styles.btnText}>CRIAR E OBTER CÓDIGO</Text>
+      <TouchableOpacity style={styles.btn} onPress={handleCriar} disabled={loading}>
+        {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>CRIAR E OBTER CÓDIGO</Text>}
       </TouchableOpacity>
     </View>
   );
