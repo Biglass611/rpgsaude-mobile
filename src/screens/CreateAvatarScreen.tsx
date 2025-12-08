@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import { API_URL } from '../config'
+import { API_URL } from '../config';
+import { jwtDecode } from "jwt-decode";
 
 export default function CreateAvatarScreen() {
-  const navigation = useNavigation<any>();
+  // CORREÇÃO 1: Adicionei <any> para ele aceitar qualquer nome de rota ('Home', 'LoginScreen', etc)
+  const navigation = useNavigation<any>(); 
+  
   const [nomeHeroi, setNomeHeroi] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleCriarAvatar() {
+  useEffect(() => {
+    async function checkToken() {
+      const token = await AsyncStorage.getItem('@rpgsaude_token');
+      if (!token) {
+        Alert.alert("Sessão Expirada", "Faça login novamente.");
+        // Certifique-se que o nome 'Login' é EXATAMENTE como está no seu App.js ou rotas
+        navigation.navigate('Login'); 
+      }
+    }
+    checkToken();
+  }, []);
+
+ async function handleCriarAvatar() {
     if (!nomeHeroi.trim()) {
       Alert.alert("Ops", "Por favor, dê um nome ao seu herói!");
       return;
@@ -18,34 +33,43 @@ export default function CreateAvatarScreen() {
 
     setLoading(true);
     try {
-      // 1. Recupera o token que salvamos no Login
-      const token = await AsyncStorage.getItem('meu_token_rpg');
+      const token = await AsyncStorage.getItem('@rpgsaude_token');
+      
+      if (!token) {
+        Alert.alert("Erro", "Token não encontrado. Faça login novamente.");
+        setLoading(false);
+        return;
+      }
 
-      // 2. Monta os dados (ID do usuário o backend pega pelo token)
+      const decoded = jwtDecode(token);
+      const idUsuarioLogado = decoded.sub; 
+
+      // --- AQUI ESTÁ A MUDANÇA ---
+      // Tentativa 1: Formato de Objeto (Padrão JPA/Spring)
       const dadosAvatar = {
+        usuario: { id: idUsuarioLogado }, // <--- MUDAMOS ISSO
         nome: nomeHeroi,
         nivel: 1,
         moedas: 0,
         atributos: "Força: 1, Agilidade: 1"
       };
+      // ----------------------------
 
       console.log("--- DEBUG DE ENVIO ---");
-console.log("1. Token sendo enviado:", token);
-console.log("2. Tipo do Token:", typeof token);
-console.log("3. Dados do Avatar:", JSON.stringify(dadosAvatar, null, 2));
+      console.log("Payload:", JSON.stringify(dadosAvatar, null, 2));
 
-      // 3. Envia para o Backend
       await axios.post(`${API_URL}/api/avatar/criar`, dadosAvatar, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      // 4. Sucesso! Vai para o jogo
       Alert.alert("Sucesso!", "Seu herói nasceu. Boa sorte!");
       navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
 
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Falha ao criar avatar. Tente novamente.");
+    } catch (error: any) {
+      console.error("ERRO AO CRIAR AVATAR:", error);
+      // Às vezes o erro 403 não retorna mensagem JSON, então tratamos isso:
+      const mensagemErro = error.response?.data?.message || "Permissão negada (403). Verifique o console do servidor.";
+      Alert.alert("Erro", mensagemErro);
     } finally {
       setLoading(false);
     }

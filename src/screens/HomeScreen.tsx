@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../config';
 
-// Se você tiver ícones, pode importar aqui (ex: Ionicons)
-// import { Ionicons } from '@expo/vector-icons'; 
-
 export default function HomeScreen() {
-  const navigation = useNavigation<any>(); // <any> resolve o erro de navegação
+  const navigation = useNavigation<any>(); 
   const [avatar, setAvatar] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,10 +17,10 @@ export default function HomeScreen() {
   const carregarAvatar = async () => {
     try {
       const token = await AsyncStorage.getItem('@rpgsaude_token');
+      // Se der erro aqui, verifique se sua API está rodando
       const response = await axios.get(`${API_URL}/api/avatar/listar`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Pega o primeiro avatar da lista
       setAvatar(response.data[0]);
     } catch (error) {
       console.log('Erro ao carregar avatar:', error);
@@ -51,7 +48,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* --- CARTA DO PERSONAGEM (Mantive seu visual original) --- */}
+      {/* --- CARTA DO PERSONAGEM --- */}
       <View style={styles.header}>
         <Text style={styles.titulo}>Ficha do Personagem</Text>
         <TouchableOpacity onPress={logout} style={styles.btnLogout}>
@@ -61,7 +58,6 @@ export default function HomeScreen() {
 
       <View style={styles.cardAvatar}>
         <View style={styles.avatarPlaceholder}>
-             {/* Se tiver imagem real, coloque <Image /> aqui */}
              <Text style={{fontSize: 40}}>🛡️</Text> 
         </View>
         <Text style={styles.nomeAvatar}>{avatar?.nome || "Aventureiro"}</Text>
@@ -69,21 +65,21 @@ export default function HomeScreen() {
         <Text style={styles.atributos}>{avatar?.atributos || "Força: 0, Agilidade: 0"}</Text>
       </View>
 
-      {/* --- MENU DE AÇÕES (Aqui acontece a mágica) --- */}
-      <Text style={styles.sectionTitle}>O que deseja fazer?</Text>
+      {/* --- MENU DE AÇÕES --- */}
+      <Text style={styles.sectionTitle}>Missões Disponíveis</Text>
       
       <View style={styles.gridMenu}>
         
-        {/* 1. Botão para ver atividades que já entrou */}
+        {/* 1. Minhas Dungeons */}
         <TouchableOpacity 
             style={[styles.menuBtn, {backgroundColor: '#2980b9'}]}
             onPress={() => navigation.navigate('MinhaDungeon')}
         >
             <Text style={styles.iconBtn}>📋</Text>
-            <Text style={styles.textBtn}>Minhas Atividades</Text>
+            <Text style={styles.textBtn}>Minhas Dungeons</Text>
         </TouchableOpacity>
 
-        {/* 2. Botão para procurar novos grupos */}
+        {/* 2. Procurar Grupo */}
         <TouchableOpacity 
             style={[styles.menuBtn, {backgroundColor: '#27ae60'}]}
             onPress={() => navigation.navigate('Desafios')}
@@ -92,23 +88,22 @@ export default function HomeScreen() {
             <Text style={styles.textBtn}>Procurar Grupo</Text>
         </TouchableOpacity>
 
-        {/* 3. Botão para criar um grupo novo */}
+        {/* 3. Calculadora de IMC */}
         <TouchableOpacity 
             style={[styles.menuBtn, {backgroundColor: '#8e44ad'}]}
             onPress={() => navigation.navigate('CriarDesafio')}
         >
             <Text style={styles.iconBtn}>⚔️</Text>
-            <Text style={styles.textBtn}>Criar Grupo</Text>
+            <Text style={styles.textBtn}>Forja de Atributos (IMC)</Text>
         </TouchableOpacity>
 
-        {/* 4. Leaderboard (Se não tiver a tela ainda, deixa um alert) */}
+        {/* 4. NOVA FUNCIONALIDADE: Fonte de Mana (Água) */}
         <TouchableOpacity 
-            style={[styles.menuBtn, {backgroundColor: '#f39c12'}]}
-            onPress={() => Alert.alert("Em breve", "O Ranking Global está sendo calculado!")} 
-            // Se já tiver a tela: onPress={() => navigation.navigate('Leaderboard')}
+            style={[styles.menuBtn, {backgroundColor: '#00bcd4'}]} // Cor Ciano
+            onPress={() => navigation.navigate('Hidratacao')} // Nome da rota no App.tsx
         >
-            <Text style={styles.iconBtn}>🏆</Text>
-            <Text style={styles.textBtn}>Ranking Global</Text>
+            <Text style={styles.iconBtn}>💧</Text>
+            <Text style={styles.textBtn}>Fonte de Mana (Água)</Text>
         </TouchableOpacity>
 
       </View>
@@ -119,7 +114,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#050511', padding: 20 },
   header: { flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginTop: 30, marginBottom: 20 },
-  titulo: { color: '#f1c40f', fontSize: 24, fontWeight: 'bold', fontFamily: 'serif' }, // estilo RPG
+  titulo: { color: '#f1c40f', fontSize: 24, fontWeight: 'bold' }, 
   btnLogout: { backgroundColor: '#c0392b', padding: 5, borderRadius: 5, paddingHorizontal: 15 },
   logoutText: { color: '#fff', fontWeight: 'bold' },
 
