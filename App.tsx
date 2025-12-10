@@ -17,7 +17,7 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator id="root" initialRouteName="Login">
         
         {/* --- AUTENTICAÇÃO --- */}
         <Stack.Screen 
