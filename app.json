@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "rpgsaude-mobile",
-    "slug": "rpgsaude-mobile",
+    "name": "rpgsaude",
+    "slug": "rpgsaude-expo-tsx",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
