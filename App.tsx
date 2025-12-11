@@ -7,7 +7,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import CadastroScreen from './src/screens/CadastroScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CreateAvatarScreen from './src/screens/CreateAvatarScreen'; 
-import CriarDesafioScreen from './src/screens/CriarDesafioScreen';
+import CriarDesafioScreen from './src/screens/CalculadoraDeIMCScreen';
 import MinhaDungeonScreen from './src/screens/MinhaDungeonScreen';
 import DesafiosScreen from './src/screens/DesafiosScreen'; 
 import HidratacaoScreen from './src/screens/HidratacaoScreen';

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import axios from 'axios'; // Mantemos axios só para a verificação do Avatar (passo 2)
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../config'; 
+
+// --- IMPORTAÇÃO DO SERVIÇO NOVO ---
+import { loginUser } from '../services/authService'; 
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
@@ -13,7 +16,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    console.log("Botão clicado!");
+    console.log("Botão clicado! Iniciando processo...");
     
     if (!email || !senha) {
       Alert.alert("Atenção", "Preencha e-mail e senha!");
@@ -23,34 +26,26 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // 1. TENTA LOGAR
-      const urlLogin = `${API_URL}/users/login`; 
-      console.log("Logando em:", urlLogin);
+      // --- PASSO 1: LOGIN (Usando o authService blindado) ---
+      // A função loginUser já trata os erros 403, 404, 500 e mostra o Alert
+      const data = await loginUser(email.trim(), senha.trim());
       
-      const response = await axios.post(urlLogin, {
-        email: email.trim(),
-        password: senha.trim() 
-      });
-
-      // Pega o token puro
-      const token = response.data.token;
+      // Se passou daqui, o login funcionou!
+      const token = data.token;
       
       if (!token) {
-          throw new Error("Token não veio na resposta");
+          throw new Error("Login funcionou, mas o token veio vazio.");
       }
 
-      // --- PASSO 1: Salva o Token (Para autenticação) ---
+      // Salva Token e Usuário
       await AsyncStorage.setItem('@rpgsaude_token', token);
-      console.log("Token salvo corretamente em @rpgsaude_token!");
-
-      // --- PASSO 2 (NOVO): Salva o Usuário (Para filtrar as missões) ---
-      // Salvamos o email que você digitou para usar no filtro da DungeonScreen
       await AsyncStorage.setItem('@rpgsaude_usuario_login', email.trim());
-      console.log("Usuário salvo para filtro:", email.trim());
+      console.log("Login OK. Token salvo.");
 
-      // 3. VERIFICA SE TEM AVATAR
-      console.log("Verificando se tem herói...");
+      // --- PASSO 2: VERIFICA AVATAR (Continua aqui na tela por enquanto) ---
+      console.log("Verificando herói...");
       
+      // Aqui usamos API_URL do config para garantir que bate com o /rpgsaude
       const avatarResponse = await axios.get(`${API_URL}/api/avatar/listar`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -58,19 +53,17 @@ export default function LoginScreen() {
       const listaAvatares = avatarResponse.data;
 
       if (listaAvatares && listaAvatares.length > 0) {
-        // TEM AVATAR -> Vai pro Jogo
         console.log("Avatar encontrado. Indo para Home.");
         navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
       } else {
-        // NÃO TEM -> Vai criar
         console.log("Sem avatar. Indo para Criação.");
         navigation.navigate('CriarAvatar'); 
       }
 
-    } catch (error: any) {
-      console.error("Erro no login:", error);
-      const msg = error.response?.data?.message || "Login falhou. Verifique senha ou conexão.";
-      Alert.alert("Erro", msg);
+    } catch (error) {
+      // NÃO PRECISA FAZER NADA AQUI.
+      // O authService já mostrou o Alert com o erro detalhado (403, 404, etc).
+      console.log("Erro capturado na tela (já tratado pelo service).");
     } finally {
       setLoading(false);
     }
