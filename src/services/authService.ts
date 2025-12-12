@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Alert } from 'react-native';
 // AQUI ESTAVA O ERRO: Mudamos de BASE_URL para API_URL
-import { API_URL } from '../config'; 
+import { API_URL } from '../config';
 
 export const loginUser = async (email: string, password: string) => {
   // Mudamos aqui também para usar API_URL
@@ -9,18 +9,18 @@ export const loginUser = async (email: string, password: string) => {
 
   try {
     const response = await axios.post(`${API_URL}/users/login`, {
-      login: email, 
+      login: email,
       senha: password
-    });
+    }, { timeout: 10000 });
 
-    return response.data; 
+    return response.data;
 
   } catch (error: any) {
     let mensagemErro = "Erro desconhecido";
 
     if (error.response) {
       const status = error.response.status;
-      
+
       if (status === 403) {
         mensagemErro = "⛔ ERRO 403: Acesso negado. O servidor da faculdade pode estar desatualizado ou bloqueando o app.";
       } else if (status === 401) {
